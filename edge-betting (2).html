@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDGE — AI Betting</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080809; --surface:#0f0f12; --card:#13131a; --border:#222230;
+  --accent:#e8ff47; --green:#69ff8a; --red:#ff5252; --yellow:#ffea00;
+  --orange:#ff7043; --blue:#40c4ff; --text:#e8e8f0; --muted:#9090a8; --dim:#4a4a5a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+
+/* HEADER */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  background:rgba(8,8,9,0.97);position:sticky;top:0;z-index:100;
+  flex-wrap:wrap;gap:10px;
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:7px;color:var(--accent);line-height:1;}
+.logo-sub{font-size:0.55rem;letter-spacing:3px;color:var(--dim);margin-top:1px;}
+.hright{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+.live-pill{
+  display:flex;align-items:center;gap:5px;padding:4px 10px;
+  border:1px solid rgba(105,255,138,0.2);border-radius:20px;
+  background:rgba(105,255,138,0.05);font-size:0.58rem;letter-spacing:2px;color:var(--green);
+}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+
+.tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:3px;}
+.tab{
+  padding:5px 13px;border-radius:5px;cursor:pointer;border:none;
+  background:transparent;color:var(--dim);font-family:'DM Mono',monospace;
+  font-size:0.63rem;letter-spacing:1.5px;transition:all 0.18s;
+}
+.tab.active{background:var(--accent);color:#000;font-weight:600;}
+.tab:hover:not(.active){color:var(--text);}
+
+/* API KEY BAR */
+.api-wrap{
+  display:flex;align-items:center;gap:7px;padding:6px 11px;
+  background:var(--surface);border:1px solid var(--border);border-radius:7px;
+}
+.api-wrap label{font-size:0.5rem;letter-spacing:2px;color:var(--dim);white-space:nowrap;}
+.api-wrap input{
+  background:transparent;border:none;outline:none;
+  color:var(--accent);font-family:'DM Mono',monospace;font-size:0.63rem;
+  width:160px;letter-spacing:0.5px;
+}
+.api-wrap input::placeholder{color:var(--dim);}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:1fr 295px;min-height:calc(100vh - 62px);}
+@media(max-width:700px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{border-top:1px solid var(--border);}
+  .api-wrap input{width:110px;}
+}
+.main{padding:18px;border-right:1px solid var(--border);}
+.sidebar{padding:16px;}
+
+/* SECTION LABEL */
+.slabel{
+  font-size:0.52rem;letter-spacing:4px;text-transform:uppercase;
+  color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:9px;
+}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* BANKROLL */
+.bk-card{
+  background:var(--card);border:1px solid var(--border);border-radius:9px;
+  padding:15px;margin-bottom:14px;position:relative;overflow:hidden;
+}
+.bk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);}
+.bk-lbl{font-size:0.52rem;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:9px;}
+.bk-row{display:flex;gap:7px;}
+.bk-iwrap{position:relative;flex:1;}
+.bk-iwrap::before{content:'$';position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--accent);pointer-events:none;}
+.bk-input{
+  width:100%;padding:8px 8px 8px 20px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:0.85rem;outline:none;
+}
+.bk-input:focus{border-color:var(--accent);}
+.bk-input::placeholder{color:var(--dim);}
+.bk-sel{
+  padding:8px 7px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.62rem;outline:none;cursor:pointer;
+}
+.bk-stats{display:flex;gap:12px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.bks{display:flex;flex-direction:column;gap:2px;}
+.bksl{font-size:0.48rem;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.bksv{font-size:0.8rem;color:var(--accent);}
+
+/* ANALYZE BUTTON */
+.abtn{
+  width:100%;padding:13px;background:var(--accent);color:#000;border:none;
+  border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;
+  letter-spacing:5px;cursor:pointer;margin-bottom:18px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:all 0.18s;
+}
+.abtn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(232,255,71,0.25);}
+.abtn:active{transform:translateY(0);}
+.abtn:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;transform:none;box-shadow:none;}
+.spin{width:15px;height:15px;border:2.5px solid rgba(0,0,0,0.25);border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BET CARDS */
+.bet-card{
+  background:var(--card);border:1px solid var(--border);border-radius:9px;
+  padding:16px;margin-bottom:11px;position:relative;overflow:hidden;
+  cursor:pointer;transition:all 0.2s;animation:fadeup 0.35s ease both;
+}
+@keyframes fadeup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.bet-card:hover{border-color:rgba(232,255,71,0.35);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+.bet-card.sel{border-color:var(--accent);background:#14160a;}
+.bet-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.bet-card.hi::before{background:var(--accent);}
+.bet-card.md::before{background:var(--yellow);}
+.bet-card.lo::before{background:var(--orange);}
+
+.bc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;gap:8px;}
+.bc-match{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;line-height:1.2;}
+.bc-time{font-size:0.56rem;color:var(--dim);margin-top:3px;display:flex;align-items:center;gap:6px;}
+.lpill{font-size:0.5rem;padding:2px 6px;border-radius:3px;letter-spacing:1px;}
+.lp-nba{background:rgba(64,196,255,0.1);color:var(--blue);border:1px solid rgba(64,196,255,0.2);}
+.lp-wnba{background:rgba(232,255,71,0.08);color:var(--accent);border:1px solid rgba(232,255,71,0.18);}
+.lp-bg{background:rgba(105,255,138,0.08);color:var(--green);border:1px solid rgba(105,255,138,0.18);}
+
+.cbadge{padding:3px 8px;border-radius:4px;font-size:0.56rem;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;flex-shrink:0;}
+.cb-h{background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.22);}
+.cb-m{background:rgba(255,234,0,0.08);color:var(--yellow);border:1px solid rgba(255,234,0,0.18);}
+.cb-l{background:rgba(255,112,67,0.08);color:var(--orange);border:1px solid rgba(255,112,67,0.18);}
+
+.bc-rec{font-style:italic;font-size:0.98rem;color:var(--text);margin-bottom:8px;line-height:1.4;}
+.bc-why{font-size:0.68rem;color:var(--muted);line-height:1.65;margin-bottom:11px;}
+.bc-stats{display:flex;gap:12px;flex-wrap:wrap;}
+.bcs{display:flex;flex-direction:column;gap:2px;}
+.bcsl{font-size:0.48rem;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.bcsv{font-size:0.8rem;font-weight:500;}
+.cg{color:var(--green);} .cy{color:var(--yellow);} .co{color:var(--orange);}
+
+.ebar{margin-top:11px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
+.efill{height:100%;border-radius:1px;transition:width 1.1s cubic-bezier(.22,1,.36,1);}
+
+.size-badge{
+  display:inline-flex;align-items:center;gap:6px;margin-top:11px;
+  padding:5px 10px;border-radius:5px;font-size:0.65rem;letter-spacing:1px;
+}
+.sb-h{background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.18);color:var(--accent);}
+.sb-m{background:rgba(255,234,0,0.06);border:1px solid rgba(255,234,0,0.15);color:var(--yellow);}
+.sb-l{background:rgba(255,112,67,0.06);border:1px solid rgba(255,112,67,0.15);color:var(--orange);}
+.size-amt{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;}
+.pot{font-size:0.58rem;color:var(--dim);margin-top:4px;}
+.pot span{color:var(--green);}
+.cfoot{font-size:0.56rem;color:var(--dim);margin-top:7px;display:flex;justify-content:space-between;}
+.cfoot span:last-child{color:var(--accent);}
+
+/* EMPTY */
+.empty{text-align:center;padding:45px 14px;color:var(--dim);}
+.empty-icon{font-size:2.2rem;opacity:0.3;margin-bottom:11px;}
+.empty-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;margin-bottom:7px;}
+.empty-sub{font-size:0.66rem;line-height:1.7;max-width:250px;margin:0 auto;}
+
+/* LOADING */
+.shimmer{height:11px;border-radius:3px;margin-bottom:7px;background:linear-gradient(90deg,var(--card) 25%,var(--border) 50%,var(--card) 75%);background-size:200% 100%;animation:sh 1.2s infinite;}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:11px;}
+.ltitle{font-size:0.55rem;letter-spacing:3px;color:var(--accent);margin-bottom:12px;}
+
+/* SIDEBAR */
+.ibox{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px;margin-bottom:9px;animation:fadeup .3s ease both;}
+.ititle{font-size:0.5rem;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:7px;}
+.itext{font-size:0.7rem;line-height:1.7;}
+.itext strong{color:var(--accent);font-weight:500;}
+
+.btgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px;}
+.btstat{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:10px;text-align:center;animation:fadeup .3s ease both;}
+.btnum{font-family:'Bebas Neue',sans-serif;font-size:1.45rem;letter-spacing:2px;line-height:1;margin-bottom:3px;}
+.btlbl{font-size:0.48rem;letter-spacing:2px;text-transform:uppercase;color:var(--dim);}
+
+/* PARLAY */
+.pbox{background:#0c1200;border:1px solid rgba(232,255,71,0.16);border-radius:9px;padding:14px;margin-top:10px;}
+.ptitle{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:3px;color:var(--accent);margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;}
+.pleg{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(232,255,71,0.07);font-size:0.65rem;gap:5px;}
+.pleg:last-child{border-bottom:none;}
+.pempty{text-align:center;color:var(--dim);font-size:0.63rem;padding:4px 0;}
+.prm{background:none;border:none;color:var(--dim);cursor:pointer;font-size:1rem;transition:color .15s;flex-shrink:0;}
+.prm:hover{color:var(--red);}
+.podds{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding-top:9px;border-top:1px solid rgba(232,255,71,0.12);}
+.polbl{font-size:0.5rem;letter-spacing:2px;text-transform:uppercase;color:var(--dim);}
+.poval{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--accent);letter-spacing:2px;}
+
+/* CHAT */
+.chat-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px;margin-bottom:14px;}
+.chat-title{font-size:0.5rem;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:9px;}
+.chat-row{display:flex;gap:7px;}
+.chat-in{
+  flex:1;padding:8px 10px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.7rem;outline:none;
+}
+.chat-in:focus{border-color:var(--accent);}
+.chat-in::placeholder{color:var(--dim);}
+.chat-btn{
+  padding:8px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;cursor:pointer;color:var(--accent);font-family:'DM Mono',monospace;
+  font-size:0.65rem;transition:all .15s;white-space:nowrap;
+}
+.chat-btn:hover{border-color:var(--accent);}
+.chat-resp{margin-top:9px;padding:9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:0.68rem;line-height:1.7;color:var(--muted);display:none;}
+
+.disc{font-size:0.55rem;color:var(--dim);line-height:1.6;padding:11px;border:1px solid var(--border);border-radius:7px;margin-top:12px;}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">EDGE</div>
+    <div class="logo-sub">AI Betting · NBA / WNBA / 🇧🇬 Parva Liga</div>
+  </div>
+  <div class="hright">
+    <div class="live-pill"><div class="live-dot"></div>AI Live</div>
+    <div class="api-wrap">
+      <label>API KEY</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="setLeague('NBA',this)">NBA</button>
+      <button class="tab" onclick="setLeague('WNBA',this)">WNBA</button>
+      <button class="tab" onclick="setLeague('BG',this)">🇧🇬 Футбол</button>
+      <button class="tab" onclick="setLeague('ALL',this)">Всичко</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="main">
+
+    <div class="bk-card">
+      <div class="bk-lbl">💵 Твоят Бюджет / Your Bankroll</div>
+      <div class="bk-row">
+        <div class="bk-iwrap">
+          <input class="bk-input" type="number" id="bankrollInput" placeholder="напр. 500" min="1" oninput="updateBankroll()">
+        </div>
+        <select class="bk-sel" id="stratSel" onchange="updateBankroll()">
+          <option value="kelly">Kelly</option>
+          <option value="flat">Flat 2%</option>
+          <option value="aggr">Агресив 5%</option>
+          <option value="safe">Безопасен 1%</option>
+        </select>
+      </div>
+      <div class="bk-stats" id="bkStats" style="display:none">
+        <div class="bks"><div class="bksl">Общо</div><div class="bksv" id="bkTotal">—</div></div>
+        <div class="bks"><div class="bksl">Макс/Бет</div><div class="bksv" id="bkMax">—</div></div>
+        <div class="bks"><div class="bksl">Дневен лимит</div><div class="bksv" id="bkLimit">—</div></div>
+        <div class="bks"><div class="bksl">Стратегия</div><div class="bksv" id="bkMode">—</div></div>
+      </div>
+    </div>
+
+    <button class="abtn" id="analyzeBtn" onclick="runAnalysis()">
+      <div class="spin" id="spinner"></div>
+      <span id="btnText">⚡ АНАЛИЗИРАЙ МАЧОВЕТЕ</span>
+    </button>
+
+    <div class="slabel">Препоръчани Залози</div>
+    <div id="betsContainer">
+      <div class="empty">
+        <div class="empty-icon">🏆</div>
+        <div class="empty-title">Готов за Анализ</div>
+        <div class="empty-sub">
+          1. Въведи API ключ горе вдясно<br>
+          2. Въведи твоя бюджет<br>
+          3. Избери лига<br>
+          4. Натисни Анализирай
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sidebar">
+
+    <div class="chat-box">
+      <div class="chat-title">💬 Питай за мач</div>
+      <div class="chat-row">
+        <input class="chat-in" id="chatIn" placeholder="Левски vs ЦСКА?" onkeydown="if(event.key==='Enter')doChat()">
+        <button class="chat-btn" onclick="doChat()">Ask AI</button>
+      </div>
+      <div class="chat-resp" id="chatResp"></div>
+    </div>
+
+    <div class="slabel">Парлей Билдър</div>
+    <div class="pbox">
+      <div class="ptitle">
+        МОЯ ПАРЛЕЙ
+        <span id="legCount" style="font-size:0.6rem;color:var(--dim);font-family:'DM Mono',monospace">0 крака</span>
+      </div>
+      <div id="parlayLegs"><div class="pempty">Кликни залог за добавяне</div></div>
+      <div class="podds" id="parlayOdds" style="display:none">
+        <span class="polbl">Комб. Коефициент</span>
+        <span class="poval" id="parlayOddsVal">+000</span>
+      </div>
+      <div id="parlayStake"></div>
+    </div>
+
+    <div class="slabel" style="margin-top:16px">AI Анализ</div>
+    <div id="insightsContainer">
+      <div class="ibox">
+        <div class="ititle">Как работи</div>
+        <div class="itext">AI анализира <strong>форма на отборите</strong>, <strong>контузии</strong>, <strong>H2H история</strong>, <strong>домакинско предимство</strong> и <strong>стойност на линията</strong>. Въведи API ключ и натисни Анализирай.</div>
+      </div>
+    </div>
+
+    <div class="slabel" style="margin-top:16px">Бектест</div>
+    <div id="backtestContainer">
+      <div class="ibox">
+        <div class="itext" style="color:var(--dim);font-size:0.68rem">Стартирай анализ за статистики.</div>
+      </div>
+    </div>
+
+    <div class="disc">⚠️ Само за изследователски цели. Залагайте отговорно. Никога не залагайте повече от можете да си позволите. Проблем с хазарта: 0800 11 622</div>
+
+  </div>
+</div>
+
+<script>
+var curLeague = 'NBA';
+var bankroll  = 0;
+var strategy  = 'kelly';
+var allBets   = [];
+var parlayLegs = [];
+
+// ── helpers ──────────────────────────────────────────────
+function fmt(n) {
+  return parseFloat(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function apiKey() {
+  return (document.getElementById('apiKey').value || '').trim();
+}
+
+// ── bankroll ─────────────────────────────────────────────
+function updateBankroll() {
+  bankroll  = parseFloat(document.getElementById('bankrollInput').value) || 0;
+  strategy  = document.getElementById('stratSel').value;
+  var el    = document.getElementById('bkStats');
+  if (!bankroll) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  var pct   = strategy === 'aggr' ? 0.05 : strategy === 'safe' ? 0.01 : strategy === 'flat' ? 0.02 : 0.04;
+  var names = {kelly:'Half-Kelly', flat:'Flat 2%', aggr:'Агресивен 5%', safe:'Безопасен 1%'};
+  document.getElementById('bkTotal').textContent  = '$' + fmt(bankroll);
+  document.getElementById('bkMax').textContent    = '$' + fmt(bankroll * pct);
+  document.getElementById('bkLimit').textContent  = '$' + fmt(bankroll * 0.15);
+  document.getElementById('bkMode').textContent   = names[strategy];
+  if (allBets.length) renderBets(allBets);
+  renderParlay();
+}
+
+function calcSize(bet) {
+  if (!bankroll || bankroll <= 0) return null;
+  if (strategy === 'flat') return +(bankroll * 0.02).toFixed(2);
+  if (strategy === 'aggr') return +(Math.min(bankroll * 0.05, bankroll * 0.10)).toFixed(2);
+  if (strategy === 'safe') return +(bankroll * 0.01).toFixed(2);
+  // Half-Kelly
+  var p  = (bet.edge || 60) / 100;
+  var q  = 1 - p;
+  var od = parseInt(bet.odds) || -110;
+  var b  = od > 0 ? od / 100 : 100 / Math.abs(od);
+  var k  = Math.max(0, (b * p - q) / b);
+  return +Math.max(1, bankroll * Math.min(k * 0.5, 0.08)).toFixed(2);
+}
+
+function calcWin(size, odds) {
+  var o = parseInt(odds) || -110;
+  return o > 0 ? +(size * o / 100).toFixed(2) : +(size * 100 / Math.abs(o)).toFixed(2);
+}
+
+// ── league tabs ──────────────────────────────────────────
+function setLeague(l, btn) {
+  curLeague = l;
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+// ── main analysis ────────────────────────────────────────
+async function runAnalysis() {
+  var key = apiKey();
+  if (!key) {
+    alert('⚠️ Въведи Anthropic API ключ!\n\nВземи го безплатно от:\nconsole.anthropic.com\n\nСлед като се регистрираш → API Keys → Create Key\nКопирай и постави горе в полето "API KEY"');
+    return;
+  }
+
+  var btn    = document.getElementById('analyzeBtn');
+  var spinner= document.getElementById('spinner');
+  var btnTxt = document.getElementById('btnText');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnTxt.textContent = 'АНАЛИЗИРАНЕ...';
+
+  document.getElementById('betsContainer').innerHTML =
+    '<div class="lcard"><div class="ltitle">🤖 AI анализира мачовете...</div>' +
+    '<div class="shimmer" style="width:80%"></div><div class="shimmer" style="width:60%"></div><div class="shimmer" style="width:75%"></div></div>' +
+    '<div class="lcard"><div class="shimmer" style="width:90%"></div><div class="shimmer" style="width:55%"></div><div class="shimmer" style="width:70%"></div></div>' +
+    '<div class="lcard"><div class="shimmer" style="width:85%"></div><div class="shimmer" style="width:65%"></div></div>';
+
+  document.getElementById('insightsContainer').innerHTML =
+    '<div class="lcard"><div class="ltitle">Генериране на анализ...</div>' +
+    '<div class="shimmer"></div><div class="shimmer" style="width:70%"></div></div>';
+
+  var today = new Date().toLocaleDateString('bg-BG', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+  var leagueMap = {
+    NBA:  'NBA basketball (2025-26 season)',
+    WNBA: 'WNBA basketball (2026 season)',
+    BG:   'Bulgarian Parva Liga football and Bulgarian Cup football',
+    ALL:  'NBA basketball, WNBA basketball, and Bulgarian Parva Liga football'
+  };
+  var leagueDesc = leagueMap[curLeague] || 'NBA basketball';
+
+  var bgTeams = 'ЦСКА София, Левски София, Лудогорец Разград, Локомотив Пловдив, Ботев Пловдив, БЕРОЕ Стара Загора, Черно море Варна, Арда Кърджали, Септември София, Хебър Пазарджик';
+
+  var systemPrompt = 'You are a sports betting analyst. Output ONLY a single raw JSON object. No markdown. No backticks. No explanation. Just the JSON.';
+
+  var userPrompt = 'Date: ' + today + '. Generate 5 betting picks for: ' + leagueDesc + '.\n' +
+    'Bulgarian football teams to use: ' + bgTeams + '.\n' +
+    'Use realistic current-season matchups, odds, and reasoning.\n' +
+    'Return ONLY this JSON structure, nothing else:\n' +
+    '{"bets":[{"matchup":"X vs Y","league":"NBA","time":"19:00 EET","betType":"Spread","rec":"X -3.5","odds":"-110","conf":"HIGH","edge":70,"why":"Reason in 1-2 sentences.","ip":"52%","op":"63%"}],' +
+    '"insights":{"theme":"1 sentence.","avoid":"1 sentence.","sharp":"1 sentence."},' +
+    '"backtest":{"wr":"61%","roi":"+17%","rec":"22-14","avgOdds":"-109","best":"Spread","n":"36 bets"}}\n' +
+    'Rules: exactly 5 bets, mix HIGH/MEDIUM/LOW confidence, edge between 54-78, league field must be NBA or WNBA or BG, for BG football use decimal odds like "1.85".';
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    if (!response.ok) {
+      var errData = await response.json().catch(function() { return {}; });
+      var msg = (errData.error && errData.error.message) ? errData.error.message : 'HTTP ' + response.status;
+      throw new Error(msg);
+    }
+
+    var data = await response.json();
+    var rawText = '';
+    if (data.content && data.content.length) {
+      for (var i = 0; i < data.content.length; i++) {
+        if (data.content[i].text) rawText += data.content[i].text;
+      }
+    }
+    rawText = rawText.trim();
+
+    // Extract JSON
+    var start = rawText.indexOf('{');
+    var end   = rawText.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('AI did not return JSON. Response: ' + rawText.substring(0, 200));
+
+    var parsed = JSON.parse(rawText.slice(start, end + 1));
+    if (!parsed.bets || !parsed.bets.length) throw new Error('No bets in response');
+
+    allBets = parsed.bets;
+    renderBets(parsed.bets);
+    renderInsights(parsed.insights || {});
+    renderBacktest(parsed.backtest || {});
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('betsContainer').innerHTML =
+      '<div class="ibox" style="border-color:rgba(255,82,82,0.3)">' +
+      '<div class="ititle" style="color:var(--red)">❌ Грешка</div>' +
+      '<div class="itext" style="color:var(--red)">' + esc(err.message) + '</div>' +
+      '<div class="itext" style="margin-top:8px;color:var(--muted)">Провери API ключа. Вземи го от: <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></div>' +
+      '</div>';
+  }
+
+  btn.disabled = false;
+  spinner.style.display = 'none';
+  btnTxt.textContent = '🔄 ОПРЕСНИ АНАЛИЗА';
+}
+
+// ── render bets ──────────────────────────────────────────
+function renderBets(bets) {
+  var c = document.getElementById('betsContainer');
+  c.innerHTML = '';
+
+  for (var i = 0; i < bets.length; i++) {
+    (function(bet, idx) {
+      var lg = String(bet.league || curLeague).toUpperCase();
+      var conf = String(bet.conf || bet.confidence || 'MEDIUM').toUpperCase();
+
+      var cardClass, cbClass, sbClass;
+      if (conf === 'HIGH')   { cardClass = 'hi'; cbClass = 'cb-h'; sbClass = 'sb-h'; }
+      else if (conf === 'LOW') { cardClass = 'lo'; cbClass = 'cb-l'; sbClass = 'sb-l'; }
+      else                   { cardClass = 'md'; cbClass = 'cb-m'; sbClass = 'sb-m'; }
+
+      var edge = parseInt(bet.edge) || 60;
+      var ecol = edge >= 65 ? 'cg' : edge >= 55 ? 'cy' : 'co';
+      var ebg  = edge >= 65 ? 'var(--green)' : edge >= 55 ? 'var(--yellow)' : 'var(--orange)';
+
+      var lpClass, lpName;
+      if (lg === 'NBA')       { lpClass = 'lp-nba';  lpName = 'NBA'; }
+      else if (lg === 'WNBA') { lpClass = 'lp-wnba'; lpName = 'WNBA'; }
+      else                    { lpClass = 'lp-bg';   lpName = '🇧🇬 Парва Лига'; }
+
+      var size = calcSize(bet);
+      var sizeHTML = '';
+      if (size) {
+        var win = calcWin(size, bet.odds);
+        var pctStr = strategy === 'kelly' ? ((size / bankroll) * 100).toFixed(1) + '% от бюджет'
+                   : strategy === 'flat'  ? 'Flat 2%'
+                   : strategy === 'aggr'  ? '5% агресивен'
+                   : '1% безопасен';
+        sizeHTML =
+          '<div class="size-badge ' + sbClass + '">🎯 ЗАЛОГ <span class="size-amt">$' + fmt(size) + '</span> · ' + pctStr + '</div>' +
+          '<div class="pot">При печалба → <span>+$' + fmt(win) + '</span> · Връщане: <span>$' + fmt(size + win) + '</span></div>';
+      }
+
+      var rec = bet.rec || bet.recommendation || '';
+      var why = bet.why || bet.reasoning || '';
+      var op  = bet.op  || bet.ourProb    || '—';
+      var ip  = bet.ip  || bet.impliedProb|| '—';
+
+      var card = document.createElement('div');
+      card.className = 'bet-card ' + cardClass;
+      card.style.animationDelay = (idx * 0.07) + 's';
+      card.dataset.index = idx;
+      card.innerHTML =
+        '<div class="bc-top">' +
+          '<div style="flex:1;min-width:0">' +
+            '<div class="bc-match">' + esc(bet.matchup) + '</div>' +
+            '<div class="bc-time">' + esc(bet.time || '') + '<span class="lpill ' + lpClass + '">' + lpName + '</span></div>' +
+          '</div>' +
+          '<div class="cbadge ' + cbClass + '">' + conf + '</div>' +
+        '</div>' +
+        '<div class="bc-rec">"' + esc(rec) + '"</div>' +
+        '<div class="bc-why">' + esc(why) + '</div>' +
+        '<div class="bc-stats">' +
+          '<div class="bcs"><div class="bcsl">Вид</div><div class="bcsv">' + esc(bet.betType || '') + '</div></div>' +
+          '<div class="bcs"><div class="bcsl">Коеф.</div><div class="bcsv ' + ecol + '">' + esc(bet.odds || '') + '</div></div>' +
+          '<div class="bcs"><div class="bcsl">Наша %</div><div class="bcsv ' + ecol + '">' + esc(op) + '</div></div>' +
+          '<div class="bcs"><div class="bcsl">Импл. %</div><div class="bcsv">' + esc(ip) + '</div></div>' +
+        '</div>' +
+        sizeHTML +
+        '<div class="ebar"><div class="efill" id="ef' + idx + '" style="width:0;background:' + ebg + '"></div></div>' +
+        '<div class="cfoot"><span>Предимство: ' + edge + '%</span><span>+ Добави в парлей</span></div>';
+
+      card.onclick = (function(i2, c2) { return function() { toggleParlay(i2, c2); }; })(idx, card);
+      c.appendChild(card);
+
+      setTimeout((function(i2, e2) {
+        return function() {
+          var el = document.getElementById('ef' + i2);
+          if (el) el.style.width = e2 + '%';
+        };
+      })(idx, edge), 100 + idx * 80);
+
+    })(bets[i], i);
+  }
+}
+
+// ── render insights ──────────────────────────────────────
+function renderInsights(ins) {
+  var theme = ins.theme || ins.marketTheme || '—';
+  var avoid = ins.avoid || ins.avoidBets  || '—';
+  var sharp = ins.sharp || ins.sharpAction|| '—';
+  document.getElementById('insightsContainer').innerHTML =
+    '<div class="ibox" style="animation-delay:.04s"><div class="ititle">📈 Пазарна тема</div><div class="itext">' + esc(theme) + '</div></div>' +
+    '<div class="ibox" style="animation-delay:.09s"><div class="ititle">🚫 Избягвай</div><div class="itext">' + esc(avoid) + '</div></div>' +
+    '<div class="ibox" style="animation-delay:.14s"><div class="ititle">💰 Умни пари</div><div class="itext">' + esc(sharp) + '</div></div>';
+}
+
+// ── render backtest ──────────────────────────────────────
+function renderBacktest(bt) {
+  var roi     = bt.roi || '—';
+  var roiCol  = roi.indexOf('+') === 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('backtestContainer').innerHTML =
+    '<div class="btgrid">' +
+      '<div class="btstat"><div class="btnum" style="color:var(--green)">' + esc(bt.wr || bt.winRate || '—') + '</div><div class="btlbl">Победи %</div></div>' +
+      '<div class="btstat"><div class="btnum" style="color:' + roiCol + '">' + esc(roi) + '</div><div class="btlbl">ROI</div></div>' +
+      '<div class="btstat"><div class="btnum" style="font-size:1.1rem">' + esc(bt.rec || bt.lastMonthRecord || '—') + '</div><div class="btlbl">30 дни</div></div>' +
+      '<div class="btstat"><div class="btnum" style="font-size:1.1rem">' + esc(bt.n || bt.sampleSize || '—') + '</div><div class="btlbl">Брой залози</div></div>' +
+    '</div>' +
+    '<div class="ibox"><div class="ititle">Най-добро</div><div class="itext">Ср. коеф. <strong>' + esc(bt.avgOdds || '—') + '</strong> · Вид: <strong>' + esc(bt.best || bt.bestBetType || '—') + '</strong></div></div>';
+}
+
+// ── parlay ────────────────────────────────────────────────
+function toggleParlay(idx, card) {
+  var ex = -1;
+  for (var i = 0; i < parlayLegs.length; i++) {
+    if (parlayLegs[i].idx === idx) { ex = i; break; }
+  }
+  if (ex !== -1) {
+    parlayLegs.splice(ex, 1);
+    card.classList.remove('sel');
+  } else {
+    if (parlayLegs.length >= 6) { alert('Макс. 6 крака!'); return; }
+    parlayLegs.push({ idx: idx, bet: allBets[idx] });
+    card.classList.add('sel');
+  }
+  renderParlay();
+}
+
+function renderParlay() {
+  var c   = document.getElementById('parlayLegs');
+  var od  = document.getElementById('parlayOdds');
+  var ps  = document.getElementById('parlayStake');
+  var n   = parlayLegs.length;
+  document.getElementById('legCount').textContent = n + (n === 1 ? ' крак' : ' крака');
+
+  if (!n) {
+    c.innerHTML = '<div class="pempty">Кликни залог за добавяне</div>';
+    od.style.display = 'none';
+    ps.innerHTML = '';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < parlayLegs.length; i++) {
+    var l   = parlayLegs[i];
+    var rec = String(l.bet.rec || l.bet.recommendation || '');
+    var tm  = String(l.bet.matchup || '').split(' vs ')[0];
+    if (rec.length > 26) rec = rec.substring(0, 26) + '…';
+    html +=
+      '<div class="pleg">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(rec) + '</div>' +
+          '<div style="font-size:0.56rem;color:var(--dim);margin-top:2px">' + esc(tm) + ' · ' + esc(l.bet.odds) + '</div>' +
+        '</div>' +
+        '<button class="prm" onclick="removeParlay(' + i + ')">×</button>' +
+      '</div>';
+  }
+  c.innerHTML = html;
+
+  // combined odds
+  var dec = [];
+  for (var j = 0; j < parlayLegs.length; j++) {
+    var o = parseInt(parlayLegs[j].bet.odds);
+    if (isNaN(o)) o = -110;
+    dec.push(o > 0 ? (o / 100) + 1 : (100 / Math.abs(o)) + 1);
+  }
+  var comb = dec.reduce(function(a, b) { return a * b; }, 1);
+  var am   = comb >= 2 ? '+' + Math.round((comb - 1) * 100) : '-' + Math.round(100 / (comb - 1));
+  document.getElementById('parlayOddsVal').textContent = am;
+  od.style.display = 'flex';
+
+  if (bankroll > 0 && n > 1) {
+    var pBet = +(bankroll * (n <= 3 ? 0.015 : 0.01)).toFixed(2);
+    var pWin = +(pBet * (comb - 1)).toFixed(2);
+    ps.innerHTML =
+      '<div style="margin-top:9px;padding:9px;background:rgba(232,255,71,0.05);border:1px solid rgba(232,255,71,0.15);border-radius:6px">' +
+        '<div style="font-size:0.48rem;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:4px">Препоръчан залог</div>' +
+        '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;color:var(--accent);letter-spacing:2px">$' + fmt(pBet) + '</div>' +
+        '<div style="font-size:0.58rem;color:var(--dim);margin-top:2px">При печалба → <span style="color:var(--green)">+$' + fmt(pWin) + '</span></div>' +
+      '</div>';
+  } else {
+    ps.innerHTML = '';
+  }
+}
+
+function removeParlay(i) {
+  var leg  = parlayLegs[i];
+  parlayLegs.splice(i, 1);
+  var card = document.querySelector('.bet-card[data-index="' + leg.idx + '"]');
+  if (card) card.classList.remove('sel');
+  renderParlay();
+}
+
+// ── chat ─────────────────────────────────────────────────
+async function doChat() {
+  var key = apiKey();
+  var q   = (document.getElementById('chatIn').value || '').trim();
+  if (!q) return;
+  if (!key) { alert('Въведи API ключ!'); return; }
+
+  var resp = document.getElementById('chatResp');
+  resp.style.display = 'block';
+  resp.textContent   = 'Анализирам...';
+
+  try {
+    var r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 350,
+        system: 'You are a sports betting expert specializing in NBA, WNBA, and Bulgarian Parva Liga football. Give concise betting insight in 2-3 sentences. Answer in the same language as the question.',
+        messages: [{ role: 'user', content: q }]
+      })
+    });
+    var d   = await r.json();
+    var txt = '';
+    if (d.content) {
+      for (var i = 0; i < d.content.length; i++) {
+        if (d.content[i].text) txt += d.content[i].text;
+      }
+    }
+    resp.textContent = txt || 'Няма отговор.';
+  } catch (e) {
+    resp.textContent = 'Грешка: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
